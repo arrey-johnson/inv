@@ -1,0 +1,72 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+Thumbs.db
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# environment files - never commit secrets (the example file is the only exception)
+.env
+.env.*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# supabase local dev
+supabase/.branches
+supabase/.temp
+supabase/.env
+
+# generated / scratch output (PDF previews etc.)
+/tmp
+/.tmp
+*.local.pdf
+
+# ----------------------------------------------------------------------------
+# Branding source assets
+# The official letterhead and company stamp ARE tracked (private repo, outside /public),
+# so a fresh clone can render documents. Anything else dropped in this folder is ignored.
+# Production reads them from private Supabase Storage - see README "Branding assets".
+# ----------------------------------------------------------------------------
+/assets/branding/source/*
+!/assets/branding/source/letterhead-promptstack.pdf
+!/assets/branding/source/company-stamp.png
+
+# Guard rail: the stamp/letterhead must never be placed in /public
+/public/company-stamp*
+/public/letterhead*
+/public/assets/
+
+# DEMO_MODE local database, generated PDFs and branding uploads
+/.data/
