@@ -87,10 +87,13 @@ describe.skipIf(!hasAssets)("renderDocumentPdf (with official branding assets)",
     expect(new TextDecoder("latin1").decode(bytes.slice(0, 5))).toBe("%PDF-");
   });
 
-  it("paginates long documents and keeps the letterhead on every page", async () => {
-    const bytes = await renderDocumentPdf(buildData(45), assets(), { now });
-    const doc = await PDFDocument.load(bytes);
+  it("paginates long documents and stamps every page", async () => {
+    const stamped = await renderDocumentPdf(buildData(45), assets(), { now });
+    const unstamped = await renderDocumentPdf(buildData(45), assets(), { now, applyStamp: false });
+    const doc = await PDFDocument.load(stamped);
     expect(doc.getPageCount()).toBeGreaterThan(1);
+    // Stamp image is shared; per-page draw ops still grow the file vs stamp-off.
+    expect(stamped.length).toBeGreaterThan(unstamped.length);
   });
 
   it.skipIf(!process.env.WRITE_SAMPLE_PDF)("writes sample PDFs to .tmp/ for visual inspection", async () => {

@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Paperclip } from "lucide-react";
+import { ArrowLeft, Download, Paperclip } from "lucide-react";
 import { ActivityTimeline } from "@/components/documents/document-panels";
 import { documentStatusLabel } from "@/components/documents/document-status-badge";
 import { PageHeader } from "@/components/layout/page-header";
 import { PaymentMethodLabel } from "@/components/payments/payment-method-label";
 import { VoidPaymentButton } from "@/components/payments/void-payment-button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { hasPermission } from "@/lib/auth/rbac";
 import { requirePageRepo } from "@/lib/data/page";
 import { formatMoney } from "@/lib/finance/format";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { z } from "zod";
 
 export const metadata: Metadata = { title: "Payment" };
@@ -39,7 +40,17 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
       <PageHeader
         title={`Payment of ${formatMoney(payment.amount, payment.currency)}`}
         description={`${customer?.name ?? "Customer"} - ${formatDate(payment.payment_date)}`}
-        actions={!voided && hasPermission(ctx.role, "payments.void") && <VoidPaymentButton paymentId={id} />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={`/api/payments/${id}/pdf?download=1`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              <Download className="size-4" aria-hidden /> Download receipt
+            </a>
+            {!voided && hasPermission(ctx.role, "payments.void") && <VoidPaymentButton paymentId={id} />}
+          </div>
+        }
       />
 
       {voided && (

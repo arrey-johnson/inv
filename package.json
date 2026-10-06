@@ -15,7 +15,9 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "check": "npm run typecheck && npm run lint && npm test",
-    "warm": "node scripts/warm-routes.mjs"
+    "warm": "node scripts/warm-routes.mjs",
+    "deploy:vercel": "node scripts/deploy-vercel.mjs",
+    "vercel:env": "node scripts/sync-vercel-env.mjs"
   },
   "engines": {
     "node": ">=20.9.0"

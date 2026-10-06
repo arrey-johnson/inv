@@ -70,3 +70,6 @@ supabase/.env
 
 # DEMO_MODE local database, generated PDFs and branding uploads
 /.data/
+
+.vercel
+.env*

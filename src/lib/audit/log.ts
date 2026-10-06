@@ -36,6 +36,7 @@ export type AuditAction =
   | "payment.allocate"
   | "payment.void"
   | "payment.adjust"
+  | "payment.download_pdf"
   | "document.accept"
   | "document.decline"
   | "document.expire"

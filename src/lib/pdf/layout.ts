@@ -94,9 +94,9 @@ export const DOCUMENT_LAYOUT = {
 } as const;
 
 /**
- * Company stamp placement. Rendered ONLY on the last page of a document (and only when the
- * document status allows it - see `shouldApplyStamp` in the renderer), beneath/next to the totals,
- * in the bottom-right corner of the printable area, above the footer band.
+ * Company stamp placement. Rendered on every page when the document status allows it
+ * (see `shouldApplyStamp` in the renderer), in the bottom-right corner of the printable area,
+ * above the footer band. Content flow clears this zone on all pages.
  *
  * Stamp PNG is 552x452 (aspect ~1.22). Width drives the size; height follows the aspect ratio.
  */

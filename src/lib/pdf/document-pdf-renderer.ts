@@ -4,7 +4,7 @@
  *   for every output page:
  *     1. draw the OFFICIAL LETTERHEAD PDF as the page background (embedded once, reused)
  *     2. draw dynamic content (title, parties, items table, totals, notes) inside the safe area
- *     3. (last page only) draw the company stamp PNG in the reserved bottom-right zone
+ *     3. draw the company stamp PNG in the reserved bottom-right zone (every page when stamped)
  *
  * Server-only: the letterhead and stamp bytes must be loaded from private storage / the local
  * `assets/branding/source` folder by the caller and passed in `PdfRenderAssets`. This module never
@@ -185,8 +185,16 @@ class PdfBuilder {
     this.y = isFirst ? L.safeArea.firstPageTop : L.safeArea.continuationTop;
   }
 
-  private ensureSpace(height: number, bottom: number = L.safeArea.bottom): boolean {
-    if (this.y - height >= bottom) return false;
+  /** Lowest y content may reach; clears the stamp zone on every page when a stamp is applied. */
+  private contentBottom(): number {
+    if (!this.stamp) return L.safeArea.bottom;
+    const rect = getStampRect(this.stamp.width, this.stamp.height, this.options.stampLayout);
+    return rect.top + STAMP_LAYOUT.clearance + 8;
+  }
+
+  private ensureSpace(height: number, bottom?: number): boolean {
+    const floor = bottom ?? this.contentBottom();
+    if (this.y - height >= floor) return false;
     this.addPage(false);
     this.drawContinuationHeader();
     return true;
@@ -496,16 +504,8 @@ class PdfBuilder {
     const rows = this.totalsRows();
     const rowH = L.totals.rowHeight;
     const totalsHeight = rows.length * rowH + 6;
-    const stampRect = this.stamp
-      ? getStampRect(this.stamp.width, this.stamp.height, this.options.stampLayout)
-      : null;
-
-    // The totals block lives on the right, exactly where the stamp goes on the last page:
-    // it must end above the stamp zone, otherwise move it (and the stamp) to a fresh page.
-    const totalsBottom = stampRect
-      ? stampRect.top + STAMP_LAYOUT.clearance + 8
-      : L.safeArea.bottom;
-    this.ensureSpace(totalsHeight, totalsBottom);
+    // Totals sit in the bottom-right stamp zone: keep them above it (same floor on every page).
+    this.ensureSpace(totalsHeight, this.contentBottom());
 
     const top = this.y;
     const right = PAGE.width - L.margins.right;
@@ -561,7 +561,7 @@ class PdfBuilder {
         const headingH = first ? 14 : 0;
         // keep at least 2 lines together with the heading
         this.ensureSpace(headingH + lh * Math.min(2, lines.length - index));
-        const available = Math.floor((this.y - L.safeArea.bottom - headingH) / lh);
+        const available = Math.floor((this.y - this.contentBottom() - headingH) / lh);
         const take = Math.max(1, Math.min(lines.length - index, available));
         if (first) {
           this.text(block.heading, L.margins.left, this.y - 8, { font: this.bold, size: L.fonts.small, color: C.purple });
@@ -585,9 +585,6 @@ class PdfBuilder {
       });
       this.y -= 14;
     }
-
-    // Stamp (last page only - this is the last drawing step on the last page)
-    if (this.stamp && stampRect) this.drawStamp(stampRect);
   }
 
   private bankText(): string | null {
@@ -640,6 +637,10 @@ class PdfBuilder {
   private drawPageDecorations() {
     const total = this.pages.length;
     const { data } = this;
+    const stampRect = this.stamp
+      ? getStampRect(this.stamp.width, this.stamp.height, this.options.stampLayout)
+      : null;
+
     this.pages.forEach((page, i) => {
       this.page = page;
       this.text(`Page ${i + 1} of ${total}`, PAGE.width - L.margins.right, 116, {
@@ -648,6 +649,8 @@ class PdfBuilder {
         align: "right",
       });
       this.text(data.number, L.margins.left, 116, { size: L.fonts.tiny, color: C.muted });
+
+      if (this.stamp && stampRect) this.drawStamp(stampRect);
 
       const watermark =
         data.status === "draft" ? "DRAFT" : data.status === "void" ? "CANCELLED" : null;

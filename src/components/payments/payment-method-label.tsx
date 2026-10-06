@@ -1,16 +1,8 @@
 import { Banknote, CreditCard, Landmark, ScrollText, Smartphone, Wallet, type LucideIcon } from "lucide-react";
+import { PAYMENT_METHOD_LABELS } from "@/lib/payments/payment-method-labels";
 import type { PaymentMethod } from "@/types/database";
 
-export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
-  cash: "Cash",
-  bank_transfer: "Bank transfer",
-  mtn_momo: "MTN MoMo",
-  orange_money: "Orange Money",
-  mobile_money: "Mobile money",
-  cheque: "Cheque",
-  card: "Card",
-  other: "Other",
-};
+export { PAYMENT_METHOD_LABELS };
 
 const ICONS: Record<PaymentMethod, LucideIcon> = {
   cash: Banknote,
