@@ -10,116 +10,45 @@ import { createClient } from "@/lib/supabase/server";
 
 export interface LoginState {
   error?: string;
-  info?: string;
-  /** After a code is sent, the form shows the OTP step. */
-  step?: "email" | "code";
-  email?: string;
 }
 
-const emailSchema = z.string().trim().toLowerCase().email("Enter a valid email address");
+const loginSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Enter a valid email address"),
+  password: z.string().min(1, "Enter your password").max(256),
+});
 
-/** Digits only; Supabase allows 6–10. */
-function normalizeOtp(raw: FormDataEntryValue | null): string {
-  return String(raw ?? "").replace(/\D/g, "");
-}
-
-const otpSchema = z
-  .string()
-  .regex(/^\d{6,10}$/, "Enter the code from your email (6–10 digits)");
-
-async function auditLogin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const ctx = await getAuthContext();
-  if (!ctx) return;
-  await writeAuditLog(supabase, {
-    organizationId: ctx.organizationId,
-    action: "auth.login",
-    entityType: "user",
-    entityId: ctx.user.id,
-    actorId: ctx.user.id,
-    actorEmail: ctx.user.email ?? null,
-  });
-}
-
-function otpFailureMessage(message: string | undefined): string {
-  const lower = (message ?? "").toLowerCase();
-  if (lower.includes("expired") || lower.includes("otp_expired")) {
-    return "That code is no longer valid. Request a new one and use only the newest email.";
-  }
-  return "Invalid or expired code. Request a new one if needed.";
-}
-
-/** Step 1: email a one-time code (invite-only — no auto-signup). */
-export async function requestEmailOtpAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
+export async function signInAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   if (!isSupabaseConfigured()) {
     return { error: "Supabase is not configured. Copy .env.example to .env.local and fill it in." };
   }
 
-  const parsed = emailSchema.safeParse(formData.get("email"));
+  const parsed = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Enter a valid email address", step: "email" };
+    return { error: parsed.error.issues[0]?.message ?? "Invalid credentials" };
   }
-  const email = parsed.data;
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      // Staff accounts are provisioned by an admin; never create users from the login form.
-      shouldCreateUser: false,
-    },
-  });
-
-  // Always advance to the code step with a generic message so we do not reveal whether the
-  // address is registered (Supabase errors on unknown emails when shouldCreateUser is false).
+  const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
-    console.warn("[auth] OTP send:", error.message);
+    // Deliberately generic: do not reveal whether the account exists.
+    return { error: "Invalid email or password." };
   }
 
-  return {
-    step: "code",
-    email,
-    info: `If ${email} is registered, we sent a sign-in code. Use the newest email only — an older code stops working after you resend.`,
-  };
-}
-
-/** Step 2: verify the emailed code and establish the session. */
-export async function verifyEmailOtpAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
-  if (!isSupabaseConfigured()) {
-    return { error: "Supabase is not configured. Copy .env.example to .env.local and fill it in." };
+  const ctx = await getAuthContext();
+  if (ctx) {
+    await writeAuditLog(supabase, {
+      organizationId: ctx.organizationId,
+      action: "auth.login",
+      entityType: "user",
+      entityId: ctx.user.id,
+      actorId: ctx.user.id,
+      actorEmail: ctx.user.email ?? null,
+    });
   }
 
-  const emailParsed = emailSchema.safeParse(formData.get("email"));
-  const otpParsed = otpSchema.safeParse(normalizeOtp(formData.get("token")));
-  if (!emailParsed.success) {
-    return { error: "Enter a valid email address", step: "email" };
-  }
-  if (!otpParsed.success) {
-    return {
-      error: otpParsed.error.issues[0]?.message ?? "Enter the code from your email",
-      step: "code",
-      email: emailParsed.data,
-    };
-  }
-
-  const email = emailParsed.data;
-  const token = otpParsed.data;
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.verifyOtp({
-    email,
-    token,
-    type: "email",
-  });
-
-  if (error || !data.session) {
-    console.warn("[auth] OTP verify failed:", error?.message ?? "no session returned");
-    return {
-      error: otpFailureMessage(error?.message),
-      step: "code",
-      email,
-    };
-  }
-
-  await auditLogin(supabase);
   redirect(safeRedirectPath(formData.get("next")));
 }
 

@@ -45,7 +45,7 @@ export default async function LoginPage({
         <div className="space-y-1">
           <CardTitle className="text-xl">Sign in</CardTitle>
           <CardDescription>
-            Enter your work email and we will send a 6-digit code. No password needed.
+            Manage invoices, proformas and payments for Promptstack Technologies.
           </CardDescription>
         </div>
       </CardHeader>

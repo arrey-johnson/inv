@@ -91,6 +91,15 @@ if (createErr) {
     }
     userId = existing.id;
     console.log("User already exists, attaching role:", userId);
+    const { error: pwErr } = await admin.auth.admin.updateUserById(userId, {
+      password,
+      email_confirm: true,
+    });
+    if (pwErr) {
+      console.error("Could not update password:", pwErr);
+      process.exit(1);
+    }
+    console.log("Password updated.");
   } else {
     console.error(createErr);
     process.exit(1);

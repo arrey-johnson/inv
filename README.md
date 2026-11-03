@@ -60,27 +60,9 @@ insert into user_roles (user_id, organization_id, role)
 values ('<auth-user-uuid>', '00000000-0000-4000-8000-000000000001', 'admin');
 ```
 
-Or: `node scripts/bootstrap-admin.mjs --email you@example.com --password "temp" --name "Your Name"`
-(password is unused for sign-in; login is email OTP).
+Or: `node scripts/bootstrap-admin.mjs --email you@example.com --password "YourPassword" --name "Your Name"`
 
-### 3b. Passwordless login (email OTP)
-
-Sign-in is **email + code** (Supabase Auth: 6–10 digits).
-
-In the Supabase dashboard:
-
-1. **Authentication → Providers → Email** — enabled.
-2. **Authentication → Email Templates → Magic Link** — **code only**, no confirmation link:
-
-```html
-<h2>Promptstack sign-in code</h2>
-<p>Your code is: <strong>{{ .Token }}</strong></p>
-<p>It expires in a few minutes. If you did not request this, ignore the email.</p>
-```
-
-   **Do not** include `{{ .ConfirmationURL }}` / a “Sign in” button. Email security scanners open that link and burn the same token as the code, so the UI shows “expired” even for a fresh code.
-3. **URL configuration** — Site URL = production app URL (e.g. `https://promptstack-books.vercel.app`) and redirect allow list includes `/auth/callback`.
-4. Optional: OTP expiry / rate limits under Auth settings.
+Sign-in is **email + password**. Ensure **Authentication → Providers → Email** is enabled in Supabase, and Site URL matches production (e.g. `https://promptstack-books.vercel.app`).
 
 ### 4. Run
 
