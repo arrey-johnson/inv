@@ -1,4 +1,5 @@
 import { formatMoney, formatPercent } from "@/lib/finance/format";
+import type { DueNowSplit } from "@/lib/finance/due-now";
 import type { CurrencyCode } from "@/lib/finance/money";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +18,18 @@ export interface TotalsView {
 }
 
 /** Shared by the live editor preview and the read-only document view. */
-export function TotalsPanel({ totals, currency, vatEnabled = true }: { totals: TotalsView | null; currency: CurrencyCode; vatEnabled?: boolean }) {
+export function TotalsPanel({
+  totals,
+  currency,
+  vatEnabled = true,
+  dueNow,
+}: {
+  totals: TotalsView | null;
+  currency: CurrencyCode;
+  vatEnabled?: boolean;
+  /** Staged billing preview (from due-now %). */
+  dueNow?: DueNowSplit | null;
+}) {
   const money = (value: number | undefined) => formatMoney(value ?? 0, currency);
   const rows: Array<{ label: string; value: string; muted?: boolean }> = [
     { label: "Subtotal", value: money(totals?.subtotal) },
@@ -58,6 +70,20 @@ export function TotalsPanel({ totals, currency, vatEnabled = true }: { totals: T
             <dd className="tabular-nums" data-testid="net-payable">
               {money(totals.netPayable)}
             </dd>
+          </div>
+        </>
+      )}
+      {dueNow && (
+        <>
+          <div className="flex justify-between gap-6 border-t pt-2 text-base font-semibold text-primary">
+            <dt>Amount due now ({formatPercent(dueNow.percent)})</dt>
+            <dd className="tabular-nums" data-testid="due-now">
+              {money(dueNow.dueNow)}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-6 text-muted-foreground">
+            <dt>Due later ({formatPercent(dueNow.laterPercent)})</dt>
+            <dd className="tabular-nums">{money(dueNow.dueLater)}</dd>
           </div>
         </>
       )}

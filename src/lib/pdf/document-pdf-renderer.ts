@@ -488,13 +488,30 @@ class PdfBuilder {
     if (calc.withholdings.length > 0) {
       rows.push({ label: "Net payable", value: money(calc.netPayable), style: "strong" });
     }
+    if (data.paymentSchedule) {
+      const s = data.paymentSchedule;
+      rows.push({
+        label: `Amount due now (${formatPercent(s.percentDueNow)})`,
+        value: money(s.amountDueNow),
+        style: "grand",
+      });
+      rows.push({
+        label: `Due later (${formatPercent(s.laterPercent)})`,
+        value: money(s.amountDueLater),
+        style: "muted",
+      });
+    }
     if (data.settlement) {
       if (data.settlement.rows && data.settlement.rows.length > 0) {
         for (const row of data.settlement.rows) rows.push({ label: row.label, value: `- ${money(row.amount)}`, style: "muted" });
-      } else {
+      } else if (data.settlement.paidAmount > 0) {
         rows.push({ label: "Paid / credited", value: `- ${money(data.settlement.paidAmount)}`, style: "muted" });
       }
-      rows.push({ label: "Balance due", value: money(data.settlement.balanceDue), style: "grand" });
+      // When a schedule is set and nothing has been paid yet, "Amount due now" is the call to action;
+      // still print remaining contract balance after any settlement activity.
+      if (!data.paymentSchedule || data.settlement.paidAmount > 0 || data.settlement.balanceDue !== calc.netPayable) {
+        rows.push({ label: "Balance due", value: money(data.settlement.balanceDue), style: "grand" });
+      }
     }
     return rows;
   }
@@ -533,8 +550,10 @@ class PdfBuilder {
     // Amount in words (left column, level with totals)
     let ly = top;
     if (data.currency === "XAF") {
+      // Prefer the staged "due now" amount when a payment schedule is set.
+      const wordsAmount = data.paymentSchedule?.amountDueNow ?? data.calc.netPayable;
       this.text("AMOUNT IN WORDS", L.margins.left, ly - 8, { font: this.bold, size: L.fonts.small, color: C.purple });
-      const count = this.paragraph(amountInWordsXAF(data.calc.netPayable), L.margins.left, ly - 12, leftColWidth, {
+      const count = this.paragraph(amountInWordsXAF(wordsAmount), L.margins.left, ly - 12, leftColWidth, {
         font: this.italic,
         size: L.fonts.body,
       });

@@ -288,6 +288,7 @@ export function createSupabaseDocumentRepository(
             internal_notes: d.internal_notes,
             global_discount_type: d.global_discount_type,
             global_discount_value: d.global_discount_value,
+            due_now_percent: d.due_now_percent ?? null,
             subtotal: d.subtotal,
             line_discount_total: d.line_discount_total,
             global_discount_amount: d.global_discount_amount,

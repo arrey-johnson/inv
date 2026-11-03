@@ -311,6 +311,11 @@ export type DocumentRow = {
   internal_notes: string | null;
   global_discount_type: DiscountType;
   global_discount_value: number;
+  /**
+   * Optional staged billing: share of net_payable due on issue (e.g. 40).
+   * NULL = full amount due. Does not change balance_due math.
+   */
+  due_now_percent: number | null;
   subtotal: number;
   line_discount_total: number;
   global_discount_amount: number;

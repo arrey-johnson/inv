@@ -78,6 +78,15 @@ export interface PdfDocumentData {
      */
     rows?: ReadonlyArray<{ label: string; amount: number }>;
   } | null;
+  /**
+   * Optional staged payment schedule (e.g. 40% due now). Printed under totals; does not replace Balance due.
+   */
+  paymentSchedule?: {
+    percentDueNow: number;
+    amountDueNow: number;
+    amountDueLater: number;
+    laterPercent: number;
+  } | null;
   notes?: string | null;
   terms?: string | null;
   bank?: PdfBankDetails | null;

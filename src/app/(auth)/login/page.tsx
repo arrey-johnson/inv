@@ -44,7 +44,9 @@ export default async function LoginPage({
         <PromptstackLogo variant="color" priority className="mx-auto h-12 w-auto max-w-[260px]" />
         <div className="space-y-1">
           <CardTitle className="text-xl">Sign in</CardTitle>
-          <CardDescription>Manage invoices, proformas and payments for Promptstack Technologies.</CardDescription>
+          <CardDescription>
+            Enter your work email and we will send a 6-digit code. No password needed.
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

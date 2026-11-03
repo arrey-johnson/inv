@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { PaymentMethodLabel } from "@/components/payments/payment-method-label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatMoney } from "@/lib/finance/format";
+import { splitDueNow } from "@/lib/finance/due-now";
+import { formatMoney, formatPercent } from "@/lib/finance/format";
 import { formatDate } from "@/lib/utils";
 import type { AdvanceLink, AuditLog, CreditNoteLink, DocumentRow, EmailLog, Payment, PaymentAllocation } from "@/types/database";
 
@@ -45,11 +46,18 @@ function Row({ label, value, strong, muted }: { label: string; value: string; st
 /** How the amount due is made up: total, withholding, advances, credits, payments, balance. */
 export function SettlementSummary({ doc }: { doc: DocumentRow }) {
   const money = (n: number) => formatMoney(n, doc.currency);
+  const schedule = splitDueNow(doc.net_payable, doc.due_now_percent, doc.currency);
   return (
     <dl className="w-full max-w-md space-y-1.5 text-sm">
       <Row label="Total TTC" value={money(doc.total_ttc)} />
       {doc.withholding_total > 0 && <Row label="Less withholding" value={`- ${money(doc.withholding_total)}`} muted />}
       {doc.withholding_total > 0 && <Row label="Net payable" value={money(doc.net_payable)} />}
+      {schedule && (
+        <>
+          <Row label={`Amount due now (${formatPercent(schedule.percent)})`} value={money(schedule.dueNow)} strong />
+          <Row label={`Due later (${formatPercent(schedule.laterPercent)})`} value={money(schedule.dueLater)} muted />
+        </>
+      )}
       {doc.advance_applied_amount > 0 && <Row label="Advances deducted" value={`- ${money(doc.advance_applied_amount)}`} muted />}
       {doc.credited_amount > 0 && <Row label="Credit notes" value={`- ${money(doc.credited_amount)}`} muted />}
       <Row label="Payments received" value={`- ${money(doc.paid_amount)}`} muted />

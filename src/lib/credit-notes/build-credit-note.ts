@@ -197,6 +197,7 @@ export function buildCreditNoteDocument(
     internalNotes: null,
     globalDiscountType: input.mode === "amount" ? "none" : globalDiscountType,
     globalDiscountValue,
+    dueNowPercent: null,
     lines,
     withholdings: [],
   };

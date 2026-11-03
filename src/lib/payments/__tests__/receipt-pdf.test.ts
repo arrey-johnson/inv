@@ -64,6 +64,7 @@ function makeAllocation(amount: number, number: string): PaymentDetail["allocati
     payment_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
     document_id: `d-${number}`,
     amount,
+    created_by: null,
     created_at: "",
   };
   return {
@@ -88,6 +89,7 @@ function makeAllocation(amount: number, number: string): PaymentDetail["allocati
       internal_notes: null,
       global_discount_type: "none",
       global_discount_value: 0,
+      due_now_percent: null,
       subtotal: amount,
       line_discount_total: 0,
       global_discount_amount: 0,

@@ -30,6 +30,7 @@ import {
   type BuilderDocumentType,
   type DocumentActions,
 } from "@/lib/documents/status";
+import { splitDueNow } from "@/lib/finance/due-now";
 import { CURRENCY_CODES } from "@/lib/finance/money";
 import { addDaysISO, isValidISODate } from "@/lib/utils/date-math";
 import { DISCOUNT_TYPES, type ApprovalStatus, type DocumentStatus } from "@/types/database";
@@ -111,6 +112,12 @@ export function DocumentBuilder({
     () => computeBuilderTotals(state, taxRates, applyVat, withholdingTypes),
     [state, taxRates, applyVat, withholdingTypes],
   );
+  const dueNowPreview = useMemo(() => {
+    if (documentType === "advance" || !totals.calc) return null;
+    const pct = state.dueNowPercent.trim() === "" ? null : Number(state.dueNowPercent);
+    if (pct == null || !Number.isFinite(pct)) return null;
+    return splitDueNow(totals.calc.netPayable, pct, state.currency);
+  }, [documentType, totals.calc, state.dueNowPercent, state.currency]);
   const receivable = isReceivableType(documentType);
   const editable = canSave;
   const lineTaxRateId = applyVat ? defaults.defaultTaxRateId : null;
@@ -494,6 +501,24 @@ export function DocumentBuilder({
               </Field>
             </div>
 
+            {documentType !== "advance" && (
+              <Field label="Due now (%)" htmlFor="b-due-now">
+                <Input
+                  id="b-due-now"
+                  inputMode="decimal"
+                  className="text-right tabular-nums"
+                  placeholder="e.g. 40 — blank = full amount"
+                  value={state.dueNowPercent}
+                  disabled={!editable}
+                  aria-invalid={Boolean(serverErrors.dueNowPercent)}
+                  onChange={(e) => patch({ dueNowPercent: e.target.value })}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Shows the full total on the PDF, plus how much is payable first. Leave blank if 100% is due.
+                </p>
+              </Field>
+            )}
+
             {withholdingTypes.length > 0 && (
               <fieldset className="space-y-2 rounded-md border p-3">
                 <legend className="px-1 text-sm font-medium">Withholding (optional)</legend>
@@ -524,7 +549,7 @@ export function DocumentBuilder({
               </fieldset>
             )}
 
-            <TotalsPanel totals={totals.calc} currency={state.currency} vatEnabled={applyVat} />
+            <TotalsPanel totals={totals.calc} currency={state.currency} vatEnabled={applyVat} dueNow={dueNowPreview} />
 
             {totals.error && <p className="text-xs text-destructive">{totals.error}</p>}
             {totals.incompleteLines.length > 0 && (

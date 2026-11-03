@@ -53,12 +53,26 @@ Without Supabase variables the app still boots (login page, `/api/health`); auth
 
 1. Create a Supabase project.
 2. Apply `supabase/migrations/00001…00010` in order (SQL editor, or `supabase db push`).
-3. Create the first user in Supabase Auth, then grant admin:
+3. Create the first user in Supabase Auth (email confirmed), then grant admin:
 
 ```sql
 insert into user_roles (user_id, organization_id, role)
 values ('<auth-user-uuid>', '00000000-0000-4000-8000-000000000001', 'admin');
 ```
+
+Or: `node scripts/bootstrap-admin.mjs --email you@example.com --password "temp" --name "Your Name"`
+(password is unused for sign-in; login is email OTP).
+
+### 3b. Passwordless login (email OTP)
+
+Sign-in is **email + 6-digit code** (Supabase Auth minimum is 6 digits, not 4).
+
+In the Supabase dashboard:
+
+1. **Authentication → Providers → Email** — enabled.
+2. **Authentication → Email Templates → Magic Link** — include `{{ .Token }}` so the email shows the code, e.g. `Your Promptstack code is {{ .Token }}`.
+3. **URL configuration** — Site URL and redirect allow list include your app URL and `/auth/callback`.
+4. Optional: set OTP expiry / rate limits under Auth settings.
 
 ### 4. Run
 

@@ -65,6 +65,8 @@ export interface ResolvedDocument {
   internalNotes: string | null;
   globalDiscountType: DiscountType;
   globalDiscountValue: string;
+  /** Null = full amount due. Stored as decimal string from the form (e.g. "40"). */
+  dueNowPercent: string | null;
   lines: ResolvedLine[];
   withholdings: ResolvedWithholding[];
 }
@@ -137,6 +139,7 @@ export function resolveDocumentInput(
     internalNotes: input.internalNotes,
     globalDiscountType: input.globalDiscountType,
     globalDiscountValue: input.globalDiscountValue,
+    dueNowPercent: input.documentType === "advance" ? null : input.dueNowPercent,
     lines,
     withholdings,
   };
@@ -161,6 +164,7 @@ export function resolvedFromBundle(
     internalNotes: doc.internal_notes,
     globalDiscountType: doc.global_discount_type,
     globalDiscountValue: String(doc.global_discount_value),
+    dueNowPercent: doc.due_now_percent == null ? null : String(doc.due_now_percent),
     lines: [...bundle.items]
       .sort((a, b) => a.position - b.position)
       .map((item) => ({
@@ -241,6 +245,7 @@ export function buildDraftWrite(doc: ResolvedDocument, calc: CalcDocumentResult,
       internal_notes: doc.internalNotes,
       global_discount_type: doc.globalDiscountType,
       global_discount_value: toDecimal(doc.globalDiscountValue).toNumber(),
+      due_now_percent: doc.dueNowPercent == null ? null : toDecimal(doc.dueNowPercent).toNumber(),
       subtotal: calc.subtotal,
       line_discount_total: calc.lineDiscountTotal,
       global_discount_amount: calc.globalDiscountAmount,

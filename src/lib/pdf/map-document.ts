@@ -3,6 +3,7 @@
  * the PDF prints exactly what is stored on the (issued) document.
  */
 import type { CalcDocumentResult, CalcLineResult, TaxBreakdownEntry } from "@/lib/finance/calculate-document";
+import { splitDueNow } from "@/lib/finance/due-now";
 import { D, sumDecimals } from "@/lib/finance/money";
 import { formatNumber, formatPercent } from "@/lib/finance/format";
 import { isReceivableType } from "@/lib/documents/status";
@@ -195,6 +196,8 @@ export function buildPdfDocumentData(input: BuildPdfDataInput): PdfDocumentData 
     metaRows.unshift({ label: "Valid until", value: doc.valid_until });
   }
 
+  const schedule = splitDueNow(doc.net_payable, doc.due_now_percent, doc.currency);
+
   return {
     type: doc.document_type,
     status: doc.status,
@@ -215,6 +218,14 @@ export function buildPdfDocumentData(input: BuildPdfDataInput): PdfDocumentData 
             ...(input.settlementRows && input.settlementRows.length > 0 ? { rows: input.settlementRows } : {}),
           }
         : null,
+    paymentSchedule: schedule
+      ? {
+          percentDueNow: schedule.percent,
+          amountDueNow: schedule.dueNow,
+          amountDueLater: schedule.dueLater,
+          laterPercent: schedule.laterPercent,
+        }
+      : null,
     notes: doc.notes,
     terms: doc.terms,
     // Configured destinations replace the legacy single-bank fields (never print both).

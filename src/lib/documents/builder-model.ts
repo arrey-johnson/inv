@@ -46,6 +46,8 @@ export interface BuilderState {
   internalNotes: string;
   globalDiscountType: DiscountType;
   globalDiscountValue: string;
+  /** Blank = full amount due. e.g. "40" for 40% due now. */
+  dueNowPercent: string;
   /** Configured withholding types applied to this document (rates are resolved server-side). */
   withholdingTypeIds: string[];
   lines: BuilderLine[];
@@ -113,6 +115,7 @@ export function toDocumentPayload(documentType: BuilderDocumentType, state: Buil
     internalNotes: state.internalNotes,
     globalDiscountType: state.globalDiscountType,
     globalDiscountValue: state.globalDiscountValue,
+    dueNowPercent: documentType === "advance" ? null : state.dueNowPercent.trim() === "" ? null : state.dueNowPercent,
     withholdingTypeIds: state.withholdingTypeIds,
     lines: state.lines.map((line) => ({
       itemId: line.itemId,
@@ -223,6 +226,7 @@ export function newBuilderState(input: {
     internalNotes: "",
     globalDiscountType: "none",
     globalDiscountValue: "0",
+    dueNowPercent: "",
     withholdingTypeIds: input.withholdingTypeIds ?? [],
     lines: [],
   };
@@ -249,6 +253,7 @@ export function builderStateFromBundle(bundle: Pick<DocumentBundle, "document" |
     internalNotes: doc.internal_notes ?? "",
     globalDiscountType: doc.global_discount_type,
     globalDiscountValue: String(doc.global_discount_value),
+    dueNowPercent: doc.due_now_percent == null ? "" : String(doc.due_now_percent),
     withholdingTypeIds: (bundle.withholdings ?? []).map((w) => w.withholding_type_id).filter((id): id is string => Boolean(id)),
     lines: [...bundle.items]
       .sort((a, b) => a.position - b.position)

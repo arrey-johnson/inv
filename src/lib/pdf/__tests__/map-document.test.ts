@@ -17,7 +17,7 @@ function makeDoc(overrides: Partial<DocumentRow> = {}): DocumentRow {
     issuer_snapshot: { legal_name: "Promptstack Technologies", bank_name: null, niu: null },
     issue_date: "2026-10-02", due_date: "2026-11-01", valid_until: null, currency: "XAF", reference: "PO-9",
     subject: null, notes: "n", terms: null, internal_notes: null,
-    global_discount_type: "none", global_discount_value: 0, subtotal: calc.subtotal, line_discount_total: 0,
+    global_discount_type: "none", global_discount_value: 0, due_now_percent: null, subtotal: calc.subtotal, line_discount_total: 0,
     global_discount_amount: 0, net_ht: calc.netHT, tax_total: calc.taxTotal, total_ttc: calc.totalTTC,
     withholding_total: 0, net_payable: calc.netPayable, paid_amount: 100, credited_amount: 0,
     advance_applied_amount: 0, balance_due: calc.netPayable - 100,
@@ -75,6 +75,18 @@ describe("map-document", () => {
     expect(discountLabel({ discount_type: "none", discount_value: 0, discount_amount: 0 })).toBeNull();
     expect(discountLabel({ discount_type: "percentage", discount_value: 10, discount_amount: 500 })).toBe("10%");
     expect(discountLabel({ discount_type: "fixed", discount_value: 5000, discount_amount: 5000 })).toBe("5,000");
+  });
+
+  it("exposes a payment schedule when due_now_percent is set", () => {
+    const data = buildPdfDocumentData({
+      document: makeDoc({ due_now_percent: 40, paid_amount: 0, balance_due: makeDoc().net_payable }),
+      items: makeItems(),
+      withholdings: [],
+      customer: { name: "Acme" },
+      issuer: { name: "Promptstack" },
+    });
+    expect(data.paymentSchedule?.percentDueNow).toBe(40);
+    expect(data.paymentSchedule!.amountDueNow + data.paymentSchedule!.amountDueLater).toBe(data.calc.netPayable);
   });
 
   it("does not expose draft settlement", () => {

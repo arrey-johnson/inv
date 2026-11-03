@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { DocumentBundle } from "@/lib/data/types";
 import { DOCUMENT_ROUTES, DOCUMENT_TYPE_LABELS, effectiveStatus, isReceivableType, isSalesDocumentType } from "@/lib/documents/status";
+import { splitDueNow } from "@/lib/finance/due-now";
 import { formatMoney, formatNumber, formatQuantity } from "@/lib/finance/format";
 import { D, sumDecimals } from "@/lib/finance/money";
 import { formatDate } from "@/lib/utils";
@@ -194,7 +195,12 @@ export function DocumentView({
             <CardTitle className="text-base">Totals</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <TotalsPanel totals={totals} currency={doc.currency} vatEnabled={anyTax} />
+            <TotalsPanel
+              totals={totals}
+              currency={doc.currency}
+              vatEnabled={anyTax}
+              dueNow={splitDueNow(doc.net_payable, doc.due_now_percent, doc.currency)}
+            />
             {isReceivableType(doc.document_type) && doc.status !== "draft" && doc.status !== "void" && (
               <p className="text-sm text-muted-foreground">
                 Balance due: <strong className="tabular-nums text-foreground">{formatMoney(doc.balance_due, doc.currency)}</strong>

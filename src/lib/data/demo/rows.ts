@@ -29,6 +29,7 @@ export function newDocumentRow(organizationId: string, write: DocumentWrite, act
     internal_notes: null,
     global_discount_type: "none",
     global_discount_value: 0,
+    due_now_percent: null,
     subtotal: 0,
     line_discount_total: 0,
     global_discount_amount: 0,
