@@ -53,15 +53,19 @@ export function LoginForm({ next }: { next?: string }) {
               type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
-              pattern="[0-9]{6}"
-              maxLength={6}
+              pattern="[0-9]{6,10}"
+              maxLength={10}
               placeholder="000000"
               className="text-center font-mono text-lg tracking-[0.35em]"
               required
               disabled={pending}
               autoFocus
+              onInput={(e) => {
+                const el = e.currentTarget;
+                el.value = el.value.replace(/\D/g, "").slice(0, 10);
+              }}
             />
-            <p className="text-xs text-muted-foreground">Sent to {email}</p>
+            <p className="text-xs text-muted-foreground">Sent to {email}. Use the newest code if you resent.</p>
           </div>
 
           <Button type="submit" className="h-9 w-full" disabled={pending}>

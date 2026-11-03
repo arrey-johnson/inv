@@ -65,14 +65,22 @@ Or: `node scripts/bootstrap-admin.mjs --email you@example.com --password "temp" 
 
 ### 3b. Passwordless login (email OTP)
 
-Sign-in is **email + 6-digit code** (Supabase Auth minimum is 6 digits, not 4).
+Sign-in is **email + code** (Supabase Auth: 6–10 digits).
 
 In the Supabase dashboard:
 
 1. **Authentication → Providers → Email** — enabled.
-2. **Authentication → Email Templates → Magic Link** — include `{{ .Token }}` so the email shows the code, e.g. `Your Promptstack code is {{ .Token }}`.
-3. **URL configuration** — Site URL and redirect allow list include your app URL and `/auth/callback`.
-4. Optional: set OTP expiry / rate limits under Auth settings.
+2. **Authentication → Email Templates → Magic Link** — **code only**, no confirmation link:
+
+```html
+<h2>Promptstack sign-in code</h2>
+<p>Your code is: <strong>{{ .Token }}</strong></p>
+<p>It expires in a few minutes. If you did not request this, ignore the email.</p>
+```
+
+   **Do not** include `{{ .ConfirmationURL }}` / a “Sign in” button. Email security scanners open that link and burn the same token as the code, so the UI shows “expired” even for a fresh code.
+3. **URL configuration** — Site URL = production app URL (e.g. `https://promptstack-books.vercel.app`) and redirect allow list includes `/auth/callback`.
+4. Optional: OTP expiry / rate limits under Auth settings.
 
 ### 4. Run
 

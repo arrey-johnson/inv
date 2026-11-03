@@ -18,11 +18,14 @@ export interface LoginState {
 
 const emailSchema = z.string().trim().toLowerCase().email("Enter a valid email address");
 
-/** Supabase Auth OTP length is 6–10; we use 6. */
+/** Digits only; Supabase allows 6–10. */
+function normalizeOtp(raw: FormDataEntryValue | null): string {
+  return String(raw ?? "").replace(/\D/g, "");
+}
+
 const otpSchema = z
   .string()
-  .trim()
-  .regex(/^\d{6}$/, "Enter the 6-digit code from your email");
+  .regex(/^\d{6,10}$/, "Enter the code from your email (6–10 digits)");
 
 async function auditLogin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const ctx = await getAuthContext();
@@ -35,6 +38,14 @@ async function auditLogin(supabase: Awaited<ReturnType<typeof createClient>>) {
     actorId: ctx.user.id,
     actorEmail: ctx.user.email ?? null,
   });
+}
+
+function otpFailureMessage(message: string | undefined): string {
+  const lower = (message ?? "").toLowerCase();
+  if (lower.includes("expired") || lower.includes("otp_expired")) {
+    return "That code is no longer valid. Request a new one and use only the newest email.";
+  }
+  return "Invalid or expired code. Request a new one if needed.";
 }
 
 /** Step 1: email a one-time code (invite-only — no auto-signup). */
@@ -67,7 +78,7 @@ export async function requestEmailOtpAction(_prev: LoginState, formData: FormDat
   return {
     step: "code",
     email,
-    info: `If ${email} is registered, we sent a 6-digit code. It expires in a few minutes.`,
+    info: `If ${email} is registered, we sent a sign-in code. Use the newest email only — an older code stops working after you resend.`,
   };
 }
 
@@ -78,13 +89,13 @@ export async function verifyEmailOtpAction(_prev: LoginState, formData: FormData
   }
 
   const emailParsed = emailSchema.safeParse(formData.get("email"));
-  const otpParsed = otpSchema.safeParse(formData.get("token"));
+  const otpParsed = otpSchema.safeParse(normalizeOtp(formData.get("token")));
   if (!emailParsed.success) {
     return { error: "Enter a valid email address", step: "email" };
   }
   if (!otpParsed.success) {
     return {
-      error: otpParsed.error.issues[0]?.message ?? "Enter the 6-digit code",
+      error: otpParsed.error.issues[0]?.message ?? "Enter the code from your email",
       step: "code",
       email: emailParsed.data,
     };
@@ -93,15 +104,16 @@ export async function verifyEmailOtpAction(_prev: LoginState, formData: FormData
   const email = emailParsed.data;
   const token = otpParsed.data;
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({
+  const { data, error } = await supabase.auth.verifyOtp({
     email,
     token,
     type: "email",
   });
 
-  if (error) {
+  if (error || !data.session) {
+    console.warn("[auth] OTP verify failed:", error?.message ?? "no session returned");
     return {
-      error: "Invalid or expired code. Request a new one if needed.",
+      error: otpFailureMessage(error?.message),
       step: "code",
       email,
     };
